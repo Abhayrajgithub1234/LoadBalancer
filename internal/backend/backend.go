@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"net/url"
 	"sync"
 )
 
@@ -8,6 +9,11 @@ type Server struct {
 	URL   string
 	Alive bool
 	mu    sync.RWMutex
+}
+
+func (s *Server) ParsedUrl() *url.URL {
+	u, _ := url.Parse(s.URL)
+	return u
 }
 
 func (s *Server) SetAlive(status bool) {

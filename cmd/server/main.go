@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/http/httputil"
 	"sync/atomic"
 
 	"github.com/Abhayrajgithub123/LoadBalancer/internal/backend"
@@ -23,8 +24,12 @@ func makeHandles(backends []*backend.Server) http.HandlerFunc {
 			index := (current - 1 + int64(i)) % int64(len(backends))
 			chosen := backends[index]
 			if chosen.IsAlive() {
-				io.WriteString(w, "routing to: "+chosen.URL+"\n")
-				fmt.Println("routing to:", chosen.URL)
+				proxy := httputil.NewSingleHostReverseProxy(chosen.ParsedUrl())
+				proxy.ErrorHandler = func(w http.ResponseWriter, req *http.Request, err error) {
+					fmt.Println(chosen.URL, "failed, marking dead")
+					chosen.SetAlive(false)
+				}
+				proxy.ServeHTTP(w, req)
 				return
 			}
 		}
