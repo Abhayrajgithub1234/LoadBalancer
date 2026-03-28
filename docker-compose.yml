@@ -1,0 +1,7 @@
+version: '3'
+services:
+  load-balancer:
+    build: .
+    ports:
+      - "8080:8080"
+    command: ./load-balancer -backends "http://backend1:8001,http://backend2:8002"
