@@ -1,17 +1,23 @@
 package backend
 
+import (
+	"sync"
+)
 
 type Server struct {
 	URL   string
 	Alive bool
-}
-
-func (s Server) IsAlive() bool {
-	return s.Alive
-
+	mu    sync.RWMutex
 }
 
 func (s *Server) SetAlive(status bool) {
-	s.Alive = status 
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.Alive = status
 }
 
+func (s *Server) IsAlive() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.Alive
+}
