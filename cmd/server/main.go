@@ -33,6 +33,25 @@ func makeHandles(backends []*backend.Server) http.HandlerFunc {
 	}
 }
 
+func status(s []*backend.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		result := "["
+		for i, b := range s {
+			if i > 0 {
+				result += ","
+			}
+			status := "dead"
+			if b.IsAlive() {
+				status = "alive"
+			}
+			result += fmt.Sprintf(`{"url":"%s","status":"%s"}`, b.URL, status)
+		}
+		result += "]"
+		io.WriteString(w, result)
+	}
+}
+
 func main() {
 	s := []*backend.Server{
 		{URL: "http://localhost:8001", Alive: true},
@@ -49,6 +68,7 @@ func main() {
 	}
 
 	http.HandleFunc("/", makeHandles(s))
+	http.HandleFunc("/status", status(s))
 
 	ctx := context.Background()
 	go healthcheck.StartHealthCheck(s, ctx)
