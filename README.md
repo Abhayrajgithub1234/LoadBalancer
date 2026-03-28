@@ -52,37 +52,15 @@ checks independently every 10 seconds without affecting request routing.
 
 ## Architecture Diagram
 
-```mermaid
-flowchart TD
-    subgraph Clients
-        C1[Client 1]
-        C2[Client 2]
-        C3[Client 3]
-    end
+```text
+Clients
+    Client 1 ----\
+    Client 2 -----+--> Load Balancer :8080 --> Backend A :8001 (alive)
+    Client 3 ----/                              \-> Backend B :8002 (alive)
+                                                                                             \-> Backend C :8003 (dead, skipped)
 
-    LB[Load Balancer :8080]
-
-    subgraph Backends
-        A[Backend A :8001 alive]
-        B[Backend B :8002 alive]
-        C[Backend C :8003 dead]
-    end
-
-    HC[Health Checker every 10s timeout 500ms]
-
-    C1 --> LB
-    C2 --> LB
-    C3 --> LB
-
-    LB --> A
-    LB --> B
-    LB -. skipped .-> C
-
-    HC -. /status .-> A
-    HC -. /status .-> B
-    HC -. /status .-> C
-
-    LB --- HC
+Health Checker (every 10s, timeout 500ms)
+    checks /status on A, B, and C
 ```
 
 ## Prerequisites
