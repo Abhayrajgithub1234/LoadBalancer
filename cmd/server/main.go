@@ -1,0 +1,49 @@
+package main
+
+import (
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"sync/atomic"
+
+	"github.com/Abhayrajgithub123/LoadBalancer/internal/backend"
+	"github.com/Abhayrajgithub123/LoadBalancer/internal/healthcheck"
+)
+
+func makeHandles(backends []*backend.Server) http.HandlerFunc {
+
+	var counter int64
+
+	return func(w http.ResponseWriter, req *http.Request) {
+		current := atomic.AddInt64(&counter, 1)
+		index := (current-1) % int64(len(backends))
+		chosen := backends[index]
+		io.WriteString(w, "routing to: "+chosen.URL+"\n")
+		fmt.Println("routing to:", chosen.URL)
+	}
+}
+
+func main() {
+	s := []*backend.Server{
+		{URL: "http://localhost:8001", Alive: true},
+		{URL: "http://localhost:8002", Alive: true},
+		{URL: "http://localhost:8003", Alive: true},
+		{URL: "http://localhost:8004", Alive: true},
+		{URL: "http://localhost:8005", Alive: true},
+		{URL: "http://localhost:8006", Alive: true},
+		{URL: "http://localhost:8007", Alive: true},
+		{URL: "http://localhost:8008", Alive: true},
+		{URL: "http://localhost:8009", Alive: true},
+		{URL: "http://localhost:8000", Alive: true},
+		{URL: "http://localhost:8010", Alive: true},
+	}
+
+	http.HandleFunc("/", makeHandles(s))
+	
+	ctx := context.Background()
+	go healthcheck.Start(s, ctx)
+
+	log.Fatal(http.ListenAndServe(":8080", nil))
+
+}
