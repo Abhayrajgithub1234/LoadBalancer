@@ -2,8 +2,7 @@ package healthcheck
 
 import (
 	"context"
-	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -13,25 +12,28 @@ import (
 func makeHttpReq(ctx context.Context, bes *backend.Server) {
 	req, error := http.NewRequestWithContext(ctx, "GET", bes.URL+"/status", nil)
 	if error != nil {
-		log.Fatal(error)
+		bes.SetAlive(false)
+		slog.Warn("backend unreachable", "url", bes.URL)
+		return
 	}
 
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
 		bes.SetAlive(false)
-		fmt.Println(bes.URL, "is unreachable")
+		slog.Warn("backend unreachable", "url", bes.URL)
 		return
 	}
+
+	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
 		bes.SetAlive(true)
 	} else {
 		bes.SetAlive(false)
-		fmt.Println(bes.URL, "is unreachable")
+		slog.Warn("backend unreachable", "url", bes.URL)
 		return
 	}
-	defer resp.Body.Close()
 }
 
 func StartHealthCheck(backends []*backend.Server, ctx context.Context) {
