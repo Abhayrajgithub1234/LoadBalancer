@@ -52,16 +52,7 @@ checks independently every 10 seconds without affecting request routing.
 
 ## Architecture Diagram
 
-```text
-Clients
-    Client 1 ----\
-    Client 2 -----+--> Load Balancer :8080 --> Backend A :8001 (alive)
-    Client 3 ----/                              \-> Backend B :8002 (alive)
-                                                                                             \-> Backend C :8003 (dead, skipped)
-
-Health Checker (every 10s, timeout 500ms)
-    checks /status on A, B, and C
-```
+![Architecture Diagram](images/architecture.png)
 
 ## Prerequisites
 
